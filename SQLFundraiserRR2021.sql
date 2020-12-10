@@ -11,11 +11,11 @@ use FundraiserRR2021;
 go
 
 create table Customers (
-id int not null primary key identity (1,1),
+Id int not null primary key identity (1,1),
 UserName varchar(20) not null,
 Password varchar(15) not null,
-FirstName varchar(30) not null,
-LastName varchar(50) not null,
+CustomerFirstName varchar(30) not null,
+CustomerLastName varchar(50) not null,
 StreetAddress varchar(50) not null,
 Apt# varchar(10),
 City varchar(25) not null,
@@ -25,96 +25,76 @@ PhoneNumber varchar(12) not null,
 Email varchar(75) not null
 );
 
-insert Customers (UserName, Password, FirstName, LastName, StreetAddress, Apt#, City, State, Zip, PhoneNumber, Email)
+insert Customers (UserName, Password, CustomerFirstName, CustomerLastName, StreetAddress, Apt#, City, State, Zip, PhoneNumber, Email)
 values ('adamsuser','adamspass','Amy','Adams','123 Main Street','1','Hamilton','OH','45013','513-555-1212','amyadams@yahoo.com')
 
 select *
 	from Customers
 
-create table Payment (
-id int not null primary key identity(1,1),
-CustomerId int not null foreign key references Customers(Id),
-FirstName varchar(30) not null,
-LastName varchar(50) not null,
-StreetAddress varchar(50) not null,
-Apt# varchar(10),
-City varchar(25) not null,
-State varchar(2) not null,
-Zip int not null,
-Email varchar(75) not null,
-CreditCard# int not null,
-ExpirationMonth int not null,
-ExpirationYear int not null,
-CVC int not null
-
-);
--- the CreditCard# says a 16 digit integer is too long, so I put an 8 digit integer in for now
-insert Payment (CustomerId, FirstName, LastName, StreetAddress, Apt#, City, State, Zip, Email, CreditCard#, ExpirationMonth, ExpirationYear, CVC)
-values (1, 'Amy','Adams','123 Main Street','1','Hamilton','OH', '45013','amyadams@yahoo.com', '12345678', '01', '25','246')
-
-select *
-	from Payment
-
-
-/* Item would be choosing tickets at 1 for $10, 3 for $20, or 10 for $40.
+/* Item would be choosing tickets at 1 for $10, 4 for $20, or 10 for $40.
 Each ticket needs to have a unique ItemNumber, but I don't know how to enter multiple ItemNumbers in one column??
 Item (at $10 or $20 or $40) multiplied by quantity will produce a total for the customer*/
 create table Tickets (
-	id int not null primary key identity(1,1),
+	Id int not null primary key identity(1,1),
 	CustomerId int not null foreign key references Customers(Id),
-	PaymentId int not null foreign key references Payment(Id),
-	Item varchar (9) not null,
-	ItemNumber int not null unique,
-	Quantity int not null,
-	Total decimal not null
+	TicketBundle varchar(9) not null
 	);
 
-insert Tickets (CustomerId, PaymentId, Item, ItemNumber, Quantity, Total)
-values (1, 1, '3 for 20', 122, 40.00)
+insert Tickets (CustomerId, TicketBundle)
+values (1, '1 for 10')
 
 select *
 	from Tickets
 
+create table Sales (
+	Id int not null primary key identity (1,1),
+	TicketId int not null foreign key references Tickets(Id),
+	CustomerId int not null foreign key references Customers(Id),
+	TicketBundle varchar(9) not null,
+	Price decimal(11,2) not null,
+	Quantity int not null DEFAULT 1,
+	Total decimal(11,2) not null,
+	--StudentId varchar(30) foreign key references Students(Id)
+	);
+
+insert Sales (CustomerId, TicketId, TicketBundle, Price, Quantity, Total)
+values (1, 1, '1 for 10', 10.00, 2, 20.00)
+
+select * 
+from Sales
 
 /* We are crediting a student's show choir fees if they sell $200 worth of tickets.
 The student will receive a $100 credit if they sell $200.
 We will ask the customer to select a student name from a drop down menu so that student gets credit for the tickets.*/
 create table Students (
-	id int not null primary key identity(1,1),
-	StudentsId int not null foreign key references Customers(Id),
-	TicketsId int not null foreign key references Tickets(Id),
+	Id int not null primary key identity(1,1),
 	GroupName varchar(30) not null,
 	FirstName varchar(30) not null,
 	LastName varchar(30) not null,
-	Item varchar (9) not null,
-	ItemNumber int not null unique,
-	Quantity int not null,
-	Total decimal not null
+	CustomerId int not null foreign key references Customers(Id),
+	SalesId int not null foreign key references Sales(Id)
+	
 	);
 
-insert Students (StudentsId, TicketsId, GroupName, FirstName, LastName, Item, ItemNumber, Quantity, Total)
-values (1, 1, 'Legacy', 'AJ', 'Eads', '3 for 20', 122, 2, 40.00)
+insert Students (GroupName, FirstName, LastName, CustomerId, SalesId)
+values ('Legacy', 'AJ', 'Eads', 1, 1)
 
 select * 
 	from Students
 
 
-select *
+select c.CustomerFirstName, c.CustomerLastName, c.PhoneNumber, t.TicketBundle, s.Price, s.Quantity, s.Total, st.GroupName, st.FirstName, st.LastName
 	from Customers c
-	join Payment p
-		on p.CustomerId = c.id
 	join Tickets t
-		on t.PaymentId = p.id
-	join Students s
-		on s.TicketsId = t.id
+		on t.CustomerId = c.Id
+	join Sales s
+		on s.CustomerId = s.Id
+	join Students st
+		on st.SalesId = s.Id
+	order by st.GroupName
 
-/* rows 112-116 have an error that says they cannot be bound.
-Did I not jon them correctly?*/
-select c.FirstName, c.LastName, c.Email, c.PhoneNumber, t.Item, t.ItemNumber, t.Quantity, t.Total
-	group by c.LastName
 
-select s.FirstName, s.LastName, s.Item, s.ItemNumber, s.Quantity, s.Total
-	order by s.LastName
+
 
 
 
