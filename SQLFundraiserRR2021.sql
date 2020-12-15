@@ -31,17 +31,15 @@ values ('adamsuser','adamspass','Amy','Adams','123 Main Street','1','Hamilton','
 select *
 	from Customers
 
-/* Item would be choosing tickets at 1 for $10, 4 for $20, or 10 for $40.
-Each ticket needs to have a unique ItemNumber, but I don't know how to enter multiple ItemNumbers in one column??
-Item (at $10 or $20 or $40) multiplied by quantity will produce a total for the customer*/
 create table Tickets (
 	Id int not null primary key identity(1,1),
 	CustomerId int not null foreign key references Customers(Id),
-	TicketBundle varchar(9) not null
+	TicketBundle varchar(9) not null, /* 1 for 10, 3 for 20, 10 for 40*/
+	TicketNumber int not null 
 	);
 
-insert Tickets (CustomerId, TicketBundle)
-values (1, '1 for 10')
+insert Tickets (CustomerId, TicketBundle, TicketNumber)
+values (1, '1 for 10', 1)
 
 select *
 	from Tickets
@@ -50,7 +48,7 @@ create table Sales (
 	Id int not null primary key identity (1,1),
 	TicketId int not null foreign key references Tickets(Id),
 	CustomerId int not null foreign key references Customers(Id),
-	TicketBundle varchar(9) not null,
+	TicketBundle varchar(9) not null foreign key references Tickets(TicketBundle),
 	Price decimal(11,2) not null,
 	Quantity int not null DEFAULT 1,
 	Total decimal(11,2) not null,
@@ -83,7 +81,7 @@ select *
 	from Students
 
 
-select c.CustomerFirstName, c.CustomerLastName, c.PhoneNumber, t.TicketBundle, s.Price, s.Quantity, s.Total, st.GroupName, st.FirstName, st.LastName
+select c.CustomerFirstName, c.CustomerLastName, c.PhoneNumber, t.TicketBundle, t.TicketNumber, s.Price, s.Quantity, s.Total, st.GroupName, st.FirstName, st.LastName
 	from Customers c
 	join Tickets t
 		on t.CustomerId = c.Id
